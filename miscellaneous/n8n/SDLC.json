@@ -1,0 +1,342 @@
+{
+  "name": "SDLC",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -768,
+        16
+      ],
+      "id": "8974d1ce-5f35-49bd-832d-29b338078933",
+      "name": "When chat message received",
+      "webhookId": "e732dfeb-472f-4d09-bec6-abe79b409e6d"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a supervisor node for a project using SQL, Java, Spring Boot, Maven, and Scala. Your job is to analyze the user's message and select the correct node: DEVELOPER, REVIEWER, or FINISH.\n\nFor each message, output:\n- action: The node to route to (DEVELOPER, REVIEWER, FINISH)\n- action_input: The original user message\n- observation: Brief reasoning for your choice\n\nExamples:\n\nUser message: \"Can you help me write a Spring Boot REST API?\"\naction: DEVELOPER\naction_input: Can you help me write a Spring Boot REST API?\nobservation: The user is requesting code generation for Spring Boot.\n\nUser message: \"Please review my SQL query for performance.\"\naction: REVIEWER\naction_input: Please review my SQL query for performance.\nobservation: The user wants feedback on their SQL code.\n\nUser message: \"I am done with all tasks, please summarize.\"\naction: FINISH\naction_input: I am done with all tasks, please summarize.\nobservation: The user indicates completion and requests a summary.\n\nNow, analyze the next user message and respond in the same format.\n\nNote, your job is to only provide one of DEVELOPER, REVIEWER and FINISH "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -544,
+        16
+      ],
+      "id": "56eb7591-fa95-43b5-9fd9-6857b54eed73",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        48,
+        -96
+      ],
+      "id": "4ef4bfd4-436c-48bc-b47c-0a01d3086aba",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "UScaZzKPTFYdo2Lc",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        -96
+      ],
+      "id": "6e355789-c0ec-4667-952c-96e15755ebff",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "DEVELOPER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "59cc21f2-3685-475d-8178-5d15fb084828"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DEVELOPER"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "48021613-9ef5-44a2-901d-f0a216e27095",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "REVIEWER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REVIEWER"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ae4efe3b-5e58-4b12-aa36-f8ddd7ddf7c5",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "FINISH",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FINISH"
+            }
+          ]
+        },
+        "options": {
+          "ignoreCase": true,
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -192,
+        -80
+      ],
+      "id": "656d1963-bc52-4167-b467-653bd002b7f9",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "As a Senior Software Engineer, you are a pivotal part of our innovative development team. Your expertise and leadership drive the creation of robust, scalable software solutions that meet the needs of our diverse clientele. By applying best practices in software development, you ensure that our products are reliable, efficient, and maintainable.\n\nYour goal is to lead the development of high-quality software solutions.\n\nUtilize your deep technical knowledge and experience to architect, design, and implement software systems that address complex problems. Collaborate closely with other engineers, reviewers to ensure that the solutions you develop align with business objectives and user needs.\n\nDesign and implement new feature for the given task, ensuring it integrates seamlessly with existing systems and meets performance requirements. Use your understanding of React, Tailwindcss, NodeJS to build this feature. Make sure to adhere to our coding standards and follow best practices.\n\nThe output should be a fully functional, well-documented feature that enhances our product's capabilities. Include detailed comments in the code."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        -320
+      ],
+      "id": "e8cd5ecc-2516-47d9-a282-d0dd4b4ba35b",
+      "name": "Developer"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Review Below code:",
+        "options": {
+          "systemMessage": "As a Quality Assurance Engineer, you are an integral part of our development team, ensuring that our software products are of the highest quality. Your meticulous attention to detail and expertise in testing methodologies are crucial in identifying defects and ensuring that our code meets the highest standards."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        80
+      ],
+      "id": "e774b067-2bef-446c-a207-6b9de33c2f7d",
+      "name": "Reviewer"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        384,
+        80
+      ],
+      "id": "03f01b77-4816-48b2-94a6-2b2ff284fca1",
+      "name": "Loop Over Items"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Developer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Reviewer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Developer",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Reviewer",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Developer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Developer": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reviewer": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "71990b49-07d7-4aee-be5d-3346ffcf322f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "VmLPhZtBgLLriEEc",
+  "tags": []
+}

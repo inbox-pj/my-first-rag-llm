@@ -1,0 +1,238 @@
+{
+  "name": "On_Form_To_Airtable",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Survey",
+        "formDescription": "What Tools you have worked in your current project?",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Tools",
+              "fieldType": "checkbox",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Java"
+                  },
+                  {
+                    "option": "Spring"
+                  },
+                  {
+                    "option": "Springboot"
+                  },
+                  {
+                    "option": "Spring AI"
+                  },
+                  {
+                    "option": "Flowise"
+                  },
+                  {
+                    "option": "n8n"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What is your name?",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Your email",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -704,
+        -144
+      ],
+      "id": "6a37141f-1719-43ef-af54-b2cdc36af7db",
+      "name": "On form submission",
+      "webhookId": "2b6473f6-815b-4892-93e2-006bf866a44b",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "KTKolT6saUMsriaJ",
+          "name": "n8n Basic Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "Tools",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -144
+      ],
+      "id": "83981389-87c1-4ac6-b423-4296ee0e92b3",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appxA81dRyY4sGlC3",
+          "mode": "list",
+          "cachedResultName": "Tech Preference",
+          "cachedResultUrl": "https://airtable.com/appxA81dRyY4sGlC3"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbluCKiPCDcbZ4HHO",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appxA81dRyY4sGlC3/tbluCKiPCDcbZ4HHO"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json['What is your name?'] }}",
+            "Email": "={{ $json['Your email'] }}",
+            "Preference": "={{ $json.Tools }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Preference",
+              "displayName": "Preference",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        -144
+      ],
+      "id": "06972580-f197-479d-b475-f5fa89f3fff2",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KFAgS33r39SxXuM5",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "admin@test.mailu.io",
+        "toEmail": "admin@test.mailu.io",
+        "subject": "Tech Interest",
+        "html": "=Hello  {{ $json.fields.Name }}\n\nThank you for showing interest on {{ $json.fields.Preference }}\n\nBest Regard,\nN8n AI Team",
+        "options": {
+          "appendAttribution": false,
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        -144
+      ],
+      "id": "c6e5e084-4d3a-4f9a-9eaf-c51a13ef1a4e",
+      "name": "Send email",
+      "webhookId": "5431cfdf-f96f-482a-ba7c-a305be2ffd7b",
+      "credentials": {
+        "smtp": {
+          "id": "hEtry8pWWE7rFcOi",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "432e29d4-368e-4c89-8424-f3e3c241b962",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "lLbYyCFRCPA1rDvt",
+  "tags": []
+}

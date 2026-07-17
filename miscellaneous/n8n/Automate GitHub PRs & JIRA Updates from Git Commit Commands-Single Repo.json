@@ -1,0 +1,568 @@
+{
+  "name": "Automate GitHub PRs & JIRA Updates from Git Commit Commands-Single Repo",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const commitMessage = $json.body.commits[0].message;\nconst fullRef = $json.body.ref;\nconst pushBranch = fullRef.startsWith('refs/heads/') ? fullRef.slice('refs/heads/'.length) : fullRef;\n\n// Updated regex to make the [...] part optional\nconst regex = /^([A-Z]+-\\d+)\\s(.*?)(?:\\s\\[(.*)\\])?$/;\nconst match = commitMessage.match(regex);\n\nif (!match) {\n  throw new Error(\"Commit message format is incorrect. Missing task key or message.\");\n}\n\nconst jiraKey = match[1];\nconst commitDescription = match[2].trim();\nconst flagString = match[3];\n\nconst flags = flagString ? flagString.split(',').map(s => s.trim()) : [];\n\nconst baseBranch = flags.find(f => !['auto-pr', 'taskcompleted'].includes(f));\nconst autoPR = flags.includes('auto-pr');\nconst taskCompleted = flags.includes('taskcompleted');\n\n// Validation rules\nif (autoPR && !baseBranch) {\n  throw new Error(\"Commit message error: Please enter a base branch to create the PR in.\");\n}\n\nreturn {\n  json: {\n    jiraKey,\n    commitDescription,\n    commands: flags,\n    baseBranch,\n    autoPR,\n    taskCompleted,\n    pushBranch\n  }\n};\n"
+      },
+      "id": "8465e817-4dec-4d5e-b607-6e46db16b6e7",
+      "name": "Commit Message Breakdown",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -1248,
+        688
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "0837a6e7-03a7-4a80-b263-4e75a4cc3efb",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.autoPR.toString() }}",
+              "rightValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6046dbdd-8494-4e58-966d-83b8fdae1759",
+      "name": "Check for PR commands",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -1024,
+        688
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{YOUR_GITHUB_OWNER_NAME}/{YOUR_GITHUB_REPO_NAME}/pulls",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"{{$('Commit Message Breakdown').item.json.jiraKey}} {{$('Commit Message Breakdown').item.json.commitDescription}}\",\n  \"head\": \"{{$('Commit Message Breakdown').item.json.pushBranch}}\",\n  \"base\": \"{{$('Commit Message Breakdown').item.json.baseBranch}}\",\n  \"body\": \"Auto Generated PR for Jira Task {{$('Commit Message Breakdown').item.json.jiraKey}}\"\n}\n",
+        "options": {}
+      },
+      "id": "1d931b22-aaae-4afe-8f20-4478944eef1a",
+      "name": "Request to create PR",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -80,
+        592
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "errorMessage": "Workflow stopped due to invalid commit message or no commands provided"
+      },
+      "id": "9e61e558-fbf3-4cef-96f4-a6732ffd8373",
+      "name": "Invalid commit message",
+      "type": "n8n-nodes-base.stopAndError",
+      "position": [
+        -496,
+        1008
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "errorMessage": "Workflow stopped due to invalid task or no taskcompleted command"
+      },
+      "id": "f3a3d76c-6713-407a-92a2-117a6cef4674",
+      "name": "JIRA Task does not exist",
+      "type": "n8n-nodes-base.stopAndError",
+      "position": [
+        336,
+        784
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "3945b951-fc98-45b2-8194-9b712cc15705",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.taskCompleted.toString() }}",
+              "rightValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "45ffc321-9cf6-4d63-a303-5cbd9fcc9f5a",
+      "name": "Check for task completed command",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -720,
+        896
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "issueKey": "={{ $('Check for PR commands').item.json.jiraKey }}",
+        "additionalFields": {}
+      },
+      "id": "805644e9-e934-4e8e-8d2d-0a0340ae1313",
+      "name": "Get task details for PR",
+      "type": "n8n-nodes-base.jira",
+      "position": [
+        -720,
+        496
+      ],
+      "typeVersion": 1,
+      "alwaysOutputData": false,
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "Ug8TriBsprfsTI7v",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "issueKey": "={{ $json.jiraKey }}",
+        "additionalFields": {}
+      },
+      "id": "3588f1d5-d44c-429f-84d4-2d59b9df9d19",
+      "name": "Get Task Details without PR.",
+      "type": "n8n-nodes-base.jira",
+      "position": [
+        -496,
+        768
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "3bda73c5-47f6-4605-b9db-17e74ccc2bcb",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{$('Get task details for PR').item.json.id}}",
+              "rightValue": ""
+            },
+            {
+              "id": "77d6fa4e-a7c2-4f66-810a-5566a1d78501",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $('Commit Message Breakdown').item.json.taskCompleted.toString() }}",
+              "rightValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "37f80bcc-bdcd-440f-86a5-d71e7c6084fa",
+      "name": "Check if task exist",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        64,
+        368
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "issueKey": "={{ $('Get task details for PR').item.json.key}}",
+        "updateFields": {
+          "statusId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "61",
+            "cachedResultName": "Development Done"
+          }
+        }
+      },
+      "id": "5fa57725-9731-415a-b6c9-3468ba3cc294",
+      "name": "Update task status after PR",
+      "type": "n8n-nodes-base.jira",
+      "position": [
+        320,
+        352
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "Ug8TriBsprfsTI7v",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "b63c7d9a-7f1d-497b-838b-f617bcab9457",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.id.toString() }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4d6f5d00-df3c-477b-b6e1-561502851cc8",
+      "name": "Check whether a PR already exists",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -304,
+        496
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "issueKey": "={{ $json.key }}",
+        "updateFields": {
+          "statusId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "61",
+            "cachedResultName": "Development Done"
+          }
+        }
+      },
+      "id": "e8c58c09-0d35-4928-867d-441f894bcd0d",
+      "name": "Update the task status without PR",
+      "type": "n8n-nodes-base.jira",
+      "position": [
+        32,
+        864
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "Ug8TriBsprfsTI7v",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{YOUR_GITHUB_OWNER_NAME}/{YOUR_REPO_NAME}/pulls?head={YOUR_GITHUB_OWNER_NAME}:{{ $('Commit Message Breakdown').item.json.pushBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {}
+      },
+      "id": "d8c0c38a-fdd3-49c1-b566-bb35ecaa9f92",
+      "name": "Check if PR exists",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -512,
+        496
+      ],
+      "typeVersion": 4.2,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "26d8ff5a-c830-4443-8acb-16fd095aead5",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.id }}",
+              "rightValue": ""
+            },
+            {
+              "id": "315fd79c-263b-448d-ae26-bd2b448e5212",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $('Commit Message Breakdown').item.json.taskCompleted.toString() }}",
+              "rightValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "67f8edcb-4647-4ee1-8fff-e25a0482528b",
+      "name": "Check if task exists",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -256,
+        768
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "owner": {
+          "__rl": true,
+          "value": "https://github.com/inbox-pj",
+          "mode": "url"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "ai_with_langchain_langraph_langsmith_flowise_n8n",
+          "mode": "list",
+          "cachedResultName": "ai_with_langchain_langraph_langsmith_flowise_n8n",
+          "cachedResultUrl": "https://github.com/inbox-pj/ai_with_langchain_langraph_langsmith_flowise_n8n"
+        },
+        "events": [
+          "push"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        688
+      ],
+      "id": "a72d4824-a213-4d5b-870b-951a6cf7f4f9",
+      "name": "Github Trigger",
+      "webhookId": "550a6222-bf7f-4f56-b0e7-2a7491babf6b",
+      "credentials": {
+        "githubApi": {
+          "id": "C5HIoH294Oqh483F",
+          "name": "GitHub account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Check if PR exists": {
+      "main": [
+        [
+          {
+            "node": "Check whether a PR already exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if task exist": {
+      "main": [
+        [
+          {
+            "node": "Update task status after PR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "JIRA Task does not exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if task exists": {
+      "main": [
+        [
+          {
+            "node": "Update the task status without PR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "JIRA Task does not exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request to create PR": {
+      "main": [
+        [
+          {
+            "node": "Check if task exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for PR commands": {
+      "main": [
+        [
+          {
+            "node": "Get task details for PR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check for task completed command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get task details for PR": {
+      "main": [
+        [
+          {
+            "node": "Check if PR exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commit Message Breakdown": {
+      "main": [
+        [
+          {
+            "node": "Check for PR commands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Task Details without PR.": {
+      "main": [
+        [
+          {
+            "node": "Check if task exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for task completed command": {
+      "main": [
+        [
+          {
+            "node": "Get Task Details without PR.",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid commit message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check whether a PR already exists": {
+      "main": [
+        [
+          {
+            "node": "Check if task exist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request to create PR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Github Trigger": {
+      "main": [
+        [
+          {
+            "node": "Commit Message Breakdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "05e6fe8f-b8f5-4fd0-b8c3-7827e3f4f389",
+  "meta": {
+    "templateId": "6773",
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "6a2fkHGGZupIcrhr",
+  "tags": []
+}

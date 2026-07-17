@@ -1,0 +1,301 @@
+{
+  "name": "AI Orchestrator: dynamically Selects Models Based on Input Type",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "daf34daa-19e5-42a8-b820-5aa3d78c29a4",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "position": [
+        368,
+        544
+      ],
+      "webhookId": "56b65a7f-0698-4e99-81eb-fd87e0cb5bfa",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "returnIntermediateSteps": true
+        }
+      },
+      "id": "85be9290-50ac-457e-9fa1-0c00a88667da",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        1056,
+        544
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rule": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "976d83bb-7e9e-4aab-9722-25a9e238164f",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.output.request_type }}",
+                    "rightValue": "coding"
+                  }
+                ]
+              }
+            },
+            {
+              "modelIndex": 2,
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "61d58197-db59-4cd7-bc41-bbeaf5e7b069",
+                    "operator": {
+                      "name": "filter.operator.equals",
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.output.request_type }}",
+                    "rightValue": "general"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "0721d812-2dc6-4069-87e6-844b8f94214b",
+      "name": "Model Selector",
+      "type": "@n8n/n8n-nodes-langchain.modelSelector",
+      "position": [
+        976,
+        784
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}"
+      },
+      "id": "03339701-3ed8-43c9-a490-3ebca30d39bb",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        1296,
+        784
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Your task is to classify the type of request you receive as input.\nYou must provide the following output:\n- general: if it is a general request\n- reasoning: if it is a reasoning request\n- coding: if it is a request related to code development\n- search: if it is a request that involves the use of Google tools"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "1d86d306-bbdd-45b0-9b96-fce0cbcdc0a0",
+      "name": "Request Type",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        608,
+        544
+      ],
+      "typeVersion": 1.7
+    },
+    {
+      "parameters": {
+        "model": "gemma3:1b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        912,
+        1008
+      ],
+      "id": "57be7c8a-2d53-46ef-b9f3-b524a3573566",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "UScaZzKPTFYdo2Lc",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        1008
+      ],
+      "id": "502738a2-4e2c-4b29-84c4-7a06562a26b1",
+      "name": "Ollama Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "UScaZzKPTFYdo2Lc",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        608,
+        800
+      ],
+      "id": "95b1feb0-a4bb-4d80-80ff-917d2447bc82",
+      "name": "Ollama Model2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "UScaZzKPTFYdo2Lc",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## AI Orchestrator: dynamically Selects Models Based on Input Type\n\nThis workflow is designed to intelligently **route user queries to the most suitable large language model (LLM)** based on the type of request received in a chat environment. It uses structured classification and model selection to optimize both performance and cost-efficiency in AI-driven conversations.\n\nIt dynamically routes requests to specialized AI models based on content type, optimizing response quality and efficiency.",
+        "height": 256,
+        "width": 624
+      },
+      "id": "de2fc53a-bf97-475a-b978-0cde88483ee0",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        240
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Request Type": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model Selector": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Request Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Model Selector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Model Selector",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Ollama Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Request Type",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4ab100e4-169e-4a5f-8327-e434dfa2001b",
+  "meta": {
+    "templateId": "7004",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "ULwpRuzcQG7700Lh",
+  "tags": []
+}

@@ -1,0 +1,78 @@
+{
+  "name": "MCP Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "d630c25b-5350-4b84-8599-051ca51e00f5"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -112
+      ],
+      "id": "be8e6738-58e6-445d-9ac9-99d36ce97471",
+      "name": "MCP Server Trigger",
+      "webhookId": "d630c25b-5350-4b84-8599-051ca51e00f5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        224
+      ],
+      "id": "a73a68c6-abd9-406e-8269-0c7134784acb",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        224
+      ],
+      "id": "d28b7a83-1d0d-4204-b9a9-da1a782fc4fc",
+      "name": "Calculator"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Date & Time": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9cc78412-7670-402b-85f9-b9c1763ecd42",
+  "meta": {
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "uO7DavTZhZuAo0mJ",
+  "tags": []
+}

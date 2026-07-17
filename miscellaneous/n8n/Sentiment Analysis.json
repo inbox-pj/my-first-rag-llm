@@ -1,0 +1,148 @@
+{
+  "name": "Sentiment Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Hotel Review",
+        "formDescription": "Can you please provide your review against the stay you have booked with us?",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Review",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -640,
+        -208
+      ],
+      "id": "4056595d-a812-4728-862c-fda1585da9ed",
+      "name": "On form submission",
+      "webhookId": "dd00ee2d-b4d4-4a4d-870c-e60a189cbe6f"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Review }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an expert in sentiment analysis.\nYou conduct evaluations and determine which of the three options applies:\n\nPositive\nNegative\nNeutral\n\nYou don't need to describe your anser bu respond with one word only given above."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -352,
+        -208
+      ],
+      "id": "863b5a5c-4a20-4015-8a65-ec2577481224",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        32
+      ],
+      "id": "d04eea3a-3854-457a-9898-92ec3af9b802",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "UScaZzKPTFYdo2Lc",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -240,
+        -448
+      ],
+      "id": "6b55bf1a-7bd3-4f5a-9026-b8719a993645",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "283f99a1-2d56-4616-a688-9371d2fae4a8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "rNRoEo6ZT1eeBJxw",
+  "tags": []
+}

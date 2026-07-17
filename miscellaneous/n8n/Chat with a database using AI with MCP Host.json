@@ -1,0 +1,191 @@
+{
+  "name": "Chat with a database using AI with MCP Host",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "This workflow uses a Postgres DB, but you could swap it for a MySQL or SQLite one",
+        "height": 505,
+        "width": 885,
+        "color": 7
+      },
+      "id": "3019b559-6100-4ead-8e1a-a7dece2a6982",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        -48
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "73786411-5383-4921-82ee-06b3b582bab7",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "position": [
+        544,
+        48
+      ],
+      "webhookId": "1c0d08f0-abd0-4bdc-beef-370c27aae1a0",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('sql_statement') }}",
+        "options": {}
+      },
+      "id": "e65a1558-e0c0-4c4a-a306-90dc6dcb618a",
+      "name": "Postgres",
+      "type": "n8n-nodes-base.postgresTool",
+      "position": [
+        896,
+        240
+      ],
+      "typeVersion": 2.5,
+      "credentials": {
+        "postgres": {
+          "id": "FeBpWAfGLUv4i1vv",
+          "name": "Postgres Service Account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "9df537e7-3ca2-4e72-bc85-ae0d944fbdd1",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        752,
+        240
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "57b2b959-9f25-475f-b6bb-842139725411",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        800,
+        48
+      ],
+      "typeVersion": 1.8
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        592,
+        256
+      ],
+      "id": "69038eeb-50e9-4982-8209-6ffc227433b4",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "UScaZzKPTFYdo2Lc",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://localhost:5678/mcp/d630c25b-5350-4b84-8599-051ca51e00f5",
+        "serverTransport": "httpStreamable",
+        "include": "selected",
+        "includeTools": [
+          "Call_n8n_Workflow_Tool",
+          "calculator",
+          "Date_Time"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        240
+      ],
+      "id": "3c5ae818-9ce0-4c7d-806e-f4939ffdcf27",
+      "name": "MCP Client"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e538dbcb-7788-4598-8d4e-4dd85412def8",
+  "meta": {
+    "templateId": "2090",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "JMoxWmgDWYI2LBB7",
+  "tags": []
+}

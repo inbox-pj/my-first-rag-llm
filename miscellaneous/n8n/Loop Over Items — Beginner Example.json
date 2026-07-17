@@ -1,0 +1,207 @@
+{
+  "name": "Loop Over Items — Beginner Example",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bdd87769-9f12-4bd1-8dd9-1b90ec218209",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        1168,
+        224
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {},
+      "id": "8e3ecba2-5a55-40bc-ba3a-b3cb0d581630",
+      "name": "Tool: Inject Creativity",
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "position": [
+        1552,
+        672
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "a523d13f-653d-4a91-a672-b0bd5d558f27",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        736,
+        224
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      row_number: 2,\n      id: 1,\n      Date: '2025-07-30',\n      idea: 'n8n rises to the top',\n      caption: '',\n      complete: ''\n    }\n  },\n  {\n    json: {\n      row_number: 3,\n      id: 2,\n      Date: '2025-07-31',\n      idea: 'n8n nodes',\n      caption: '',\n      complete: ''\n    }\n  },\n  {\n    json: {\n      row_number: 4,\n      id: 3,\n      Date: '2025-08-01',\n      idea: 'n8n use cases for marketing',\n      caption: '',\n      complete: ''\n    }\n  }\n];\n"
+      },
+      "id": "f0e1af9b-2785-47b1-a38c-3e108bff67f8",
+      "name": "Create Random Data",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        944,
+        224
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=idea: {{ $json.idea }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant creating captions for a linkedin post. Please create a linkedin caption for the idea. "
+        }
+      },
+      "id": "8891b681-a7cf-44c0-aff7-79e7774120d1",
+      "name": "Create Captions",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        1408,
+        384
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "331d2ca1-da0d-41ec-ac82-abe78052b84c",
+              "name": "idea",
+              "type": "string",
+              "value": "={{ $('Create Random Data').item.json.idea }}"
+            },
+            {
+              "id": "019369d9-ae99-4c29-b31d-013e29c4fdb6",
+              "name": "output",
+              "type": "string",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fa53cf32-03de-4667-80bb-b28f8c3a16aa",
+      "name": "Output Table",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1408,
+        208
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        672
+      ],
+      "id": "786de560-7e2a-42e0-a037-b0b067569c4e",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "UScaZzKPTFYdo2Lc",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Run Workflow": {
+      "main": [
+        [
+          {
+            "node": "Create Random Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Captions": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Output Table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Captions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Random Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: Inject Creativity": {
+      "ai_tool": [
+        [
+          {
+            "node": "Create Captions",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Create Captions",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "39d3b622-3a3b-4411-a032-52d0ea7d2431",
+  "meta": {
+    "templateId": "7152",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25caf5f353b68b3025cd15e90ef21a96dfc460eccae65289ad9ac47e7b983d25"
+  },
+  "id": "827pXOYvlQ8rMlry",
+  "tags": []
+}
